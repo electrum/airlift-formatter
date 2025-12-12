@@ -1,0 +1,6 @@
+.beads/
+target/
+.stordriv/
+*.class
+*.jar
+*.log
