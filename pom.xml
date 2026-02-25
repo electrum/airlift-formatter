@@ -15,6 +15,7 @@
 
     <name>Airlift Formatter</name>
     <description>Java code formatter compatible with Airlift/Trino checkstyle rules</description>
+    <url>https://github.com/jvanzyl/airlift-formatter</url>
 
     <licenses>
         <license>
@@ -23,6 +24,20 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <developers>
+        <developer>
+            <id>jvanzyl</id>
+            <name>Jason van Zyl</name>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/jvanzyl/airlift-formatter</url>
+        <connection>scm:git:https://github.com/jvanzyl/airlift-formatter.git</connection>
+        <developerConnection>scm:git:git@github.com:jvanzyl/airlift-formatter.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>airlift-formatter-core</module>
