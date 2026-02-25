@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>airlift-formatter</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${generation}</version>
     <packaging>pom</packaging>
 
     <name>Airlift Formatter</name>
@@ -29,6 +29,7 @@
     </modules>
 
     <properties>
+        <baseVersion>1.0.0</baseVersion>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.check.skip-jacoco>true</air.check.skip-jacoco>
