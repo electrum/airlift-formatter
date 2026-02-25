@@ -8,6 +8,7 @@
         <version>334</version>
     </parent>
 
+    <groupId>ca.vanzyl</groupId>
     <artifactId>airlift-formatter</artifactId>
     <version>${generation}</version>
     <packaging>pom</packaging>

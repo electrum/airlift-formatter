@@ -7,14 +7,14 @@ A standalone IntelliJ-compatible Java code formatter and checkstyle checker for 
 Quick try (no pom.xml changes needed):
 
 ```bash
-mvn io.airlift:airlift-formatter-maven-plugin:1.0-SNAPSHOT:format
+mvn ca.vanzyl:airlift-formatter-maven-plugin:1.0-SNAPSHOT:format
 ```
 
 Or add the plugin to your `pom.xml`:
 
 ```xml
 <plugin>
-    <groupId>io.airlift</groupId>
+    <groupId>ca.vanzyl</groupId>
     <artifactId>airlift-formatter-maven-plugin</artifactId>
     <version>1.0-SNAPSHOT</version>
 </plugin>
@@ -153,7 +153,7 @@ mvn test -Dtest=FormatterGapDiscoveryTest#verifyComprehensiveOnAirlift \
 
 ```xml
 <plugin>
-    <groupId>io.airlift</groupId>
+    <groupId>ca.vanzyl</groupId>
     <artifactId>airlift-formatter-maven-plugin</artifactId>
     <version>1.0-SNAPSHOT</version>
     <configuration>

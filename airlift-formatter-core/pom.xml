@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.airlift</groupId>
+        <groupId>ca.vanzyl</groupId>
         <artifactId>airlift-formatter</artifactId>
         <version>${generation}</version>
     </parent>
