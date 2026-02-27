@@ -687,9 +687,27 @@ public class LineBreaksPreparator extends ASTVisitor {
     @Override
     public boolean visit(TextBlock node) {
         int indentOption = this.options.text_block_indentation;
-        if (indentOption == Alignment.M_INDENT_PRESERVE)
+        int blockIndex = this.tm.firstIndexIn(node, TokenNameTextBlock);
+        Token block = this.tm.get(blockIndex);
+        boolean openerAlreadyOnNewLine = blockIndex > 0 && this.tm.countLineBreaksBetween(this.tm.get(blockIndex - 1), block) > 0;
+        boolean annotationValue = isInsideAnnotationValue(node);
+        boolean forcedLineBreakBefore = false;
+        // AIRLIFT MODIFICATION: Text blocks should start on a new line, except when the
+        // text block starts a return expression (e.g., `return """..."""` or
+        // `return """...""".formatted(...)`).
+        if (block.getLineBreaksBefore() == 0 && !isLeadingReturnExpressionTextBlock(node)) {
+            block.breakBefore();
+            forcedLineBreakBefore = true;
+            // Use continuation indentation for wrapped text block opener lines.
+            if (annotationValue && blockIndex > 0) {
+                block.setWrapPolicy(new WrapPolicy(
+                        WrapMode.WHERE_NECESSARY,
+                        blockIndex - 1,
+                        this.options.continuation_indentation * this.options.indentation_size));
+            }
+        }
+        if (indentOption == Alignment.M_INDENT_PRESERVE && !forcedLineBreakBefore && !openerAlreadyOnNewLine)
             return true;
-        Token block = this.tm.firstTokenIn(node, TokenNameTextBlock);
         ArrayList<Token> lines = new ArrayList<>();
         lines.add(new Token(block.originalStart, block.originalStart + 2, TokenNameNotAToken)); // first line; """
         int incidentalWhitespace = Integer.MAX_VALUE;
@@ -724,15 +742,79 @@ public class LineBreaksPreparator extends ASTVisitor {
                 blankLines++;
             }
         }
+        boolean alignWithOpeningDelimiter = indentOption == Alignment.M_INDENT_PRESERVE
+                && (forcedLineBreakBefore || openerAlreadyOnNewLine);
+        int contentIncidentalWhitespace = Integer.MAX_VALUE;
+        if (alignWithOpeningDelimiter) {
+            for (i = 1; i < lines.size(); i++) {
+                Token t = lines.get(i);
+                if (i == lines.size() - 1 && isClosingTextBlockDelimiterLine(t)) {
+                    continue;
+                }
+                contentIncidentalWhitespace = Math.min(contentIncidentalWhitespace, leadingWhitespaceInLine(t));
+            }
+            if (contentIncidentalWhitespace == Integer.MAX_VALUE) {
+                contentIncidentalWhitespace = incidentalWhitespace;
+            }
+        }
         WrapPolicy wrapPolicy = new WrapPolicy(WrapMode.DISABLED, 0, -1, 0, 0, 1, false, false);
         for (i = 1; i < lines.size(); i++) {
             Token t = lines.get(i);
-            Token line = new Token(t, t.originalStart + incidentalWhitespace, t.originalEnd, TokenNameTextBlock);
+            int trim = incidentalWhitespace;
+            if (alignWithOpeningDelimiter) {
+                if (i == lines.size() - 1 && isClosingTextBlockDelimiterLine(t)) {
+                    trim = leadingWhitespaceInLine(t);
+                }
+                else {
+                    trim = Math.min(contentIncidentalWhitespace, leadingWhitespaceInLine(t));
+                }
+            }
+            Token line = new Token(t, t.originalStart + trim, t.originalEnd, TokenNameTextBlock);
             line.setWrapPolicy(wrapPolicy);
             lines.set(i, line);
         }
         block.setInternalStructure(lines);
         return true;
+    }
+
+    private boolean isLeadingReturnExpressionTextBlock(TextBlock node) {
+        for (ASTNode current = node.getParent(); current != null; current = current.getParent()) {
+            if (current instanceof ReturnStatement returnStatement) {
+                Expression expression = returnStatement.getExpression();
+                return expression != null && this.tm.firstIndexIn(expression, ANY) == this.tm.firstIndexIn(node, TokenNameTextBlock);
+            }
+            if (current instanceof BodyDeclaration || current instanceof Statement) {
+                break;
+            }
+        }
+        return false;
+    }
+
+    private boolean isInsideAnnotationValue(TextBlock node) {
+        for (ASTNode current = node.getParent(); current != null; current = current.getParent()) {
+            if (current instanceof Annotation)
+                return true;
+        }
+        return false;
+    }
+
+    private int leadingWhitespaceInLine(Token line) {
+        int i = line.originalStart;
+        while (i <= line.originalEnd) {
+            char c = this.tm.charAt(i);
+            if (c != ' ' && c != '\t') {
+                break;
+            }
+            i++;
+        }
+        return i - line.originalStart;
+    }
+
+    private boolean isClosingTextBlockDelimiterLine(Token line) {
+        return line.originalEnd - line.originalStart == 2
+                && this.tm.charAt(line.originalStart) == '"'
+                && this.tm.charAt(line.originalStart + 1) == '"'
+                && this.tm.charAt(line.originalStart + 2) == '"';
     }
 
     private void breakLineBefore(ASTNode node) {

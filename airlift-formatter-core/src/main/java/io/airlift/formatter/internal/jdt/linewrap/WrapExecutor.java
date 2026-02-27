@@ -802,6 +802,11 @@ public class WrapExecutor {
             else if (indentOption == Alignment.M_INDENT_ON_COLUMN) {
                 lineIndent = this.tm.toIndent(this.tm.getPositionInLine(this.tm.indexOf(token)), true) - indent;
             }
+            else if (indentOption == Alignment.M_INDENT_PRESERVE) {
+                // Allow text blocks with internal structure while preserving indentation mode.
+                // In this mode, lines align with the opening text block delimiter.
+                lineIndent = 0;
+            }
             else {
                 assert false;
                 lineIndent = 0;
