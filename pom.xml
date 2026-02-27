@@ -10,7 +10,7 @@
 
     <groupId>ca.vanzyl</groupId>
     <artifactId>airlift-formatter</artifactId>
-    <version>${generation}</version>
+    <version>1.50.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Airlift Formatter</name>
@@ -32,17 +32,17 @@
         </developer>
     </developers>
 
-    <scm>
-        <url>https://github.com/jvanzyl/airlift-formatter</url>
-        <connection>scm:git:https://github.com/jvanzyl/airlift-formatter.git</connection>
-        <developerConnection>scm:git:git@github.com:jvanzyl/airlift-formatter.git</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
-
     <modules>
         <module>airlift-formatter-core</module>
         <module>airlift-formatter-maven-plugin</module>
     </modules>
+
+    <scm>
+        <connection>scm:git:https://github.com/jvanzyl/airlift-formatter.git</connection>
+        <developerConnection>scm:git:git@github.com:jvanzyl/airlift-formatter.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/jvanzyl/airlift-formatter</url>
+    </scm>
 
     <properties>
         <baseVersion>1.0.10</baseVersion>
