@@ -131,12 +131,16 @@ public class LineBreaksPreparator extends ASTVisitor {
         if (this.tm.isFake(node))
             return true;
 
-        // AIRLIFT MODIFICATION: Preserve original brace position for type declarations (enforceBracePosition=false)
-        // This supports compact forms like `class Foo {}` which IntelliJ preserves via KEEP_TYPE_DECLARATION_ON_ONE_LINE
+        // AIRLIFT MODIFICATION: Enforce configured brace position for type declarations.
         breakLineBefore(node);
         handleAnnotations(node.modifiers(), this.options.insert_new_line_after_annotation_on_type);
-        handleBracedCode(node, node.getName(), this.options.brace_position_for_type_declaration,
-                this.options.indent_body_declarations_compare_to_type_header, 0, 0, false);
+        if (node.bodyDeclarations().isEmpty()) {
+            compactEmptyBraces(node, node.getName());
+        }
+        else {
+            handleBracedCode(node, node.getName(), this.options.brace_position_for_type_declaration,
+                    this.options.indent_body_declarations_compare_to_type_header, 0, 0, true);
+        }
         return true;
     }
 
@@ -216,11 +220,15 @@ public class LineBreaksPreparator extends ASTVisitor {
 
     @Override
     public boolean visit(EnumDeclaration node) {
-        // AIRLIFT MODIFICATION: Preserve original brace position for enum declarations (enforceBracePosition=false)
-        // This supports compact forms like `enum State { A, B }` which IntelliJ preserves via KEEP_ENUM_DECLARATION_ON_ONE_LINE
+        // AIRLIFT MODIFICATION: Enforce configured brace position for enum declarations.
         handleAnnotations(node.modifiers(), this.options.insert_new_line_after_annotation_on_type);
-        handleBracedCode(node, node.getName(), this.options.brace_position_for_enum_declaration,
-                this.options.indent_body_declarations_compare_to_enum_declaration_header, 0, 0, false);
+        if (node.enumConstants().isEmpty() && node.bodyDeclarations().isEmpty()) {
+            compactEmptyBraces(node, node.getName());
+        }
+        else {
+            handleBracedCode(node, node.getName(), this.options.brace_position_for_enum_declaration,
+                    this.options.indent_body_declarations_compare_to_enum_declaration_header, 0, 0, true);
+        }
 
         List<BodyDeclaration> declarations = node.bodyDeclarations();
         List<EnumConstantDeclaration> enumConstants = node.enumConstants();
@@ -257,11 +265,16 @@ public class LineBreaksPreparator extends ASTVisitor {
 
     @Override
     public boolean visit(AnnotationTypeDeclaration node) {
-        // AIRLIFT MODIFICATION: Preserve original brace position for annotation type declarations (enforceBracePosition=false)
-        // This supports compact forms like `@interface Foo {}` which IntelliJ preserves via KEEP_ANNOTATION_DECLARATION_ON_ONE_LINE
+        // AIRLIFT MODIFICATION: Keep empty annotation types compact on one line (`@interface X {}`),
+        // while enforcing configured brace style for non-empty declarations.
         handleAnnotations(node.modifiers(), this.options.insert_new_line_after_annotation_on_type);
-        handleBracedCode(node, node.getName(), this.options.brace_position_for_annotation_type_declaration,
-                this.options.indent_body_declarations_compare_to_annotation_declaration_header, 0, 0, false);
+        if (node.bodyDeclarations().isEmpty()) {
+            compactEmptyBraces(node, node.getName());
+        }
+        else {
+            handleBracedCode(node, node.getName(), this.options.brace_position_for_annotation_type_declaration,
+                    this.options.indent_body_declarations_compare_to_annotation_declaration_header, 0, 0, true);
+        }
 
         handleBodyDeclarations(node.bodyDeclarations());
         if (node.getModifiers() == 0)
@@ -287,11 +300,15 @@ public class LineBreaksPreparator extends ASTVisitor {
 
     @Override
     public boolean visit(RecordDeclaration node) {
-        // AIRLIFT MODIFICATION: Preserve original brace position for record declarations (enforceBracePosition=false)
-        // This supports compact forms like `record Foo() {}` which IntelliJ preserves via KEEP_RECORD_DECLARATION_ON_ONE_LINE
+        // AIRLIFT MODIFICATION: Enforce configured brace position for record declarations.
         handleAnnotations(node.modifiers(), this.options.insert_new_line_after_annotation_on_type);
-        handleBracedCode(node, node.getName(), this.options.brace_position_for_record_declaration,
-                this.options.indent_body_declarations_compare_to_record_header, 0, 0, false);
+        if (node.bodyDeclarations().isEmpty()) {
+            compactEmptyBraces(node, node.getName());
+        }
+        else {
+            handleBracedCode(node, node.getName(), this.options.brace_position_for_record_declaration,
+                    this.options.indent_body_declarations_compare_to_record_header, 0, 0, true);
+        }
         handleBodyDeclarations(node.bodyDeclarations());
         return true;
     }
@@ -307,8 +324,13 @@ public class LineBreaksPreparator extends ASTVisitor {
         String bracePosition = node.isCompactConstructor() ? this.options.brace_position_for_record_constructor
                 : node.isConstructor() ? this.options.brace_position_for_constructor_declaration
                         : this.options.brace_position_for_method_declaration;
-        handleBracedCode(node.getBody(), null, bracePosition, this.options.indent_statements_compare_to_body,
-                this.options.blank_lines_at_beginning_of_method_body, this.options.blank_lines_at_end_of_method_body, false);
+        if (node.getBody().statements().isEmpty()) {
+            compactEmptyBraces(node.getBody(), null);
+        }
+        else {
+            handleBracedCode(node.getBody(), null, bracePosition, this.options.indent_statements_compare_to_body,
+                    this.options.blank_lines_at_beginning_of_method_body, this.options.blank_lines_at_end_of_method_body, false);
+        }
 
         return true;
     }
@@ -325,6 +347,10 @@ public class LineBreaksPreparator extends ASTVisitor {
             return true; // this is a fake block created by parsing in statements mode
         if (parent instanceof MethodDeclaration)
             return true; // braces have been handled in #visit(MethodDeclaration)
+        if (parent instanceof LambdaExpression && statements.isEmpty()) {
+            compactEmptyBraces(node, null);
+            return true;
+        }
 
         String bracePosition = this.options.brace_position_for_block;
         if (parent instanceof SwitchStatement sw) {
@@ -795,6 +821,32 @@ public class LineBreaksPreparator extends ASTVisitor {
             this.tm.get(openBraceIndex + 1).indent();
             closeBraceToken.unindent();
         }
+    }
+
+    private void compactEmptyBraces(ASTNode node, ASTNode nodeBeforeOpenBrace) {
+        int openBraceIndex = nodeBeforeOpenBrace == null
+                ? this.tm.firstIndexIn(node, TokenNameLBRACE)
+                : this.tm.firstIndexAfter(nodeBeforeOpenBrace, TokenNameLBRACE);
+        int closeBraceIndex = this.tm.lastIndexIn(node, TokenNameRBRACE);
+        if (openBraceIndex + 1 != closeBraceIndex) {
+            return;
+        }
+
+        Token openBrace = this.tm.get(openBraceIndex);
+        Token closeBrace = this.tm.get(closeBraceIndex);
+        if (openBraceIndex > 0) {
+            Token beforeOpenBrace = this.tm.get(openBraceIndex - 1);
+            beforeOpenBrace.clearLineBreaksAfter();
+            beforeOpenBrace.setPreserveLineBreaksAfter(false);
+        }
+        openBrace.clearLineBreaksBefore();
+        openBrace.clearLineBreaksAfter();
+        openBrace.clearSpaceAfter();
+        openBrace.setPreserveLineBreaksBefore(false);
+        openBrace.setPreserveLineBreaksAfter(false);
+        closeBrace.clearSpaceBefore();
+        closeBrace.clearLineBreaksBefore();
+        closeBrace.setPreserveLineBreaksBefore(false);
     }
 
     private void handleBracePosition(Token openBraceToken, int closeBraceIndex, String bracePosition) {

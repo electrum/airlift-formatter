@@ -57,11 +57,12 @@ class FormatterIntegrationTest
     void testFormatterPreservesAlreadyFormattedFile()
             throws IOException
     {
-        // Create an already-formatted file (standard style with proper spacing)
+        // Create an already-formatted file
         String formatted = """
                 package test;
 
-                public class Test {
+                public class Test
+                {
                     public void method() {
                         if (true) {
                             System.out.println("hello");

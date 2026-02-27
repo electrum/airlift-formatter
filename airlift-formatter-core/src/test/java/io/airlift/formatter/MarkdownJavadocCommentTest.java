@@ -33,9 +33,7 @@ public class MarkdownJavadocCommentTest
                     ///
                     /// - first item
                     /// - second item
-                    void method()
-                    {
-                    }
+                    void method() {}
                 }
                 """;
 
