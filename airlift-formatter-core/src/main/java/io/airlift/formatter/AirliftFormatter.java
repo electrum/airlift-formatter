@@ -360,6 +360,7 @@ public class AirliftFormatter
 
         // Annotations - preserve developer's choice of same-line vs separate line (gofmt-style)
         // Setting to "do not insert" means annotations won't be forced to separate lines
+        options.put(DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_ANNOTATION_ON_ENUM_CONSTANT, "do not insert");
         options.put(DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_ANNOTATION_ON_FIELD, "do not insert");
         options.put(DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_ANNOTATION_ON_METHOD, "do not insert");
         options.put(DefaultCodeFormatterConstants.FORMATTER_INSERT_NEW_LINE_AFTER_ANNOTATION_ON_PARAMETER, "do not insert");
