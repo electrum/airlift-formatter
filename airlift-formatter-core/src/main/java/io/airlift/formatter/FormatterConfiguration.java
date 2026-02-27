@@ -307,6 +307,7 @@ public final class FormatterConfiguration
 
         // Comments
         options.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_BLOCK_COMMENT, formatBlockComments ? "true" : "false");
+        options.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_MARKDOWN_COMMENT, "false");
         options.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_PRESERVE_WHITE_SPACE_BETWEEN_CODE_AND_LINE_COMMENT, preserveWhitespaceBeforeLineComments ? "true" : "false");
 
         // gofmt-style options (always set for Airlift compatibility)

@@ -376,6 +376,8 @@ public class AirliftFormatter
         // Block comments - do not format content inside block comments (gofmt-style)
         // Developer formatting inside /* */ should be preserved exactly as written
         options.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_BLOCK_COMMENT, "false");
+        // Javadoc markdown comments (///) are line-sensitive; preserve original wrapping
+        options.put(DefaultCodeFormatterConstants.FORMATTER_COMMENT_FORMAT_MARKDOWN_COMMENT, "false");
 
         return options;
     }
