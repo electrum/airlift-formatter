@@ -690,11 +690,14 @@ public class LineBreaksPreparator extends ASTVisitor {
         int blockIndex = this.tm.firstIndexIn(node, TokenNameTextBlock);
         Token block = this.tm.get(blockIndex);
         boolean openerAlreadyOnNewLine = blockIndex > 0 && this.tm.countLineBreaksBetween(this.tm.get(blockIndex - 1), block) > 0;
+        ConditionalExpression conditionalExpression = getLeadingConditionalBranchExpression(node);
+        boolean leadingConditionalBranchTextBlock = conditionalExpression != null;
         boolean forcedLineBreakBefore = false;
         // AIRLIFT MODIFICATION: Text blocks should start on a new line, except when the
-        // text block starts a return expression (e.g., `return """..."""` or
-        // `return """...""".formatted(...)`).
-        if (block.getLineBreaksBefore() == 0 && !isLeadingReturnExpressionTextBlock(node)) {
+        // text block starts a return/yield expression or a leading ternary branch.
+        if (block.getLineBreaksBefore() == 0
+                && !isLeadingReturnOrYieldExpressionTextBlock(node)
+                && !leadingConditionalBranchTextBlock) {
             block.breakBefore();
             forcedLineBreakBefore = true;
             // Use continuation indentation for wrapped text block opener lines.
@@ -705,8 +708,17 @@ public class LineBreaksPreparator extends ASTVisitor {
                         this.options.continuation_indentation * this.options.indentation_size));
             }
         }
-        if (indentOption == Alignment.M_INDENT_PRESERVE && !forcedLineBreakBefore && !openerAlreadyOnNewLine)
+        if (leadingConditionalBranchTextBlock) {
+            enforceLeadingConditionalBranchLineBreaks(conditionalExpression);
+            block.clearLineBreaksBefore();
+            block.setPreserveLineBreaksBefore(false);
+        }
+        if (indentOption == Alignment.M_INDENT_PRESERVE
+                && !forcedLineBreakBefore
+                && !openerAlreadyOnNewLine
+                && !leadingConditionalBranchTextBlock) {
             return true;
+        }
         ArrayList<Token> lines = new ArrayList<>();
         lines.add(new Token(block.originalStart, block.originalStart + 2, TokenNameNotAToken)); // first line; """
         int incidentalWhitespace = Integer.MAX_VALUE;
@@ -742,7 +754,7 @@ public class LineBreaksPreparator extends ASTVisitor {
             }
         }
         boolean alignWithOpeningDelimiter = indentOption == Alignment.M_INDENT_PRESERVE
-                && (forcedLineBreakBefore || openerAlreadyOnNewLine);
+                && (forcedLineBreakBefore || openerAlreadyOnNewLine || leadingConditionalBranchTextBlock);
         int contentIncidentalWhitespace = Integer.MAX_VALUE;
         if (alignWithOpeningDelimiter) {
             for (i = 1; i < lines.size(); i++) {
@@ -767,6 +779,11 @@ public class LineBreaksPreparator extends ASTVisitor {
                 else {
                     trim = Math.min(contentIncidentalWhitespace, leadingWhitespaceInLine(t));
                 }
+                // In ternary branches, the opener stays on the same line as "? " or ": ".
+                // Preserve that inline offset so content lines align under the opening delimiter.
+                if (leadingConditionalBranchTextBlock) {
+                    trim = Math.max(0, trim - 2);
+                }
             }
             Token line = new Token(t, t.originalStart + trim, t.originalEnd, TokenNameTextBlock);
             line.setWrapPolicy(wrapPolicy);
@@ -776,10 +793,14 @@ public class LineBreaksPreparator extends ASTVisitor {
         return true;
     }
 
-    private boolean isLeadingReturnExpressionTextBlock(TextBlock node) {
+    private boolean isLeadingReturnOrYieldExpressionTextBlock(TextBlock node) {
         for (ASTNode current = node.getParent(); current != null; current = current.getParent()) {
             if (current instanceof ReturnStatement returnStatement) {
                 Expression expression = returnStatement.getExpression();
+                return expression != null && this.tm.firstIndexIn(expression, ANY) == this.tm.firstIndexIn(node, TokenNameTextBlock);
+            }
+            if (current instanceof YieldStatement yieldStatement) {
+                Expression expression = yieldStatement.getExpression();
                 return expression != null && this.tm.firstIndexIn(expression, ANY) == this.tm.firstIndexIn(node, TokenNameTextBlock);
             }
             if (current instanceof BodyDeclaration || current instanceof Statement) {
@@ -787,6 +808,41 @@ public class LineBreaksPreparator extends ASTVisitor {
             }
         }
         return false;
+    }
+
+    private ConditionalExpression getLeadingConditionalBranchExpression(TextBlock node)
+    {
+        for (ASTNode current = node.getParent(); current != null; current = current.getParent()) {
+            if (current instanceof ConditionalExpression conditionalExpression) {
+                boolean thenBranch = conditionalExpression.getThenExpression() != null
+                        && this.tm.firstIndexIn(conditionalExpression.getThenExpression(), ANY) == this.tm.firstIndexIn(node, TokenNameTextBlock);
+                boolean elseBranch = conditionalExpression.getElseExpression() != null
+                        && this.tm.firstIndexIn(conditionalExpression.getElseExpression(), ANY) == this.tm.firstIndexIn(node, TokenNameTextBlock);
+                if (thenBranch || elseBranch) {
+                    return conditionalExpression;
+                }
+            }
+            if (current instanceof BodyDeclaration || current instanceof Statement) {
+                break;
+            }
+        }
+        return null;
+    }
+
+    private void enforceLeadingConditionalBranchLineBreaks(ConditionalExpression conditionalExpression)
+    {
+        int questionIndex = this.tm.firstIndexAfter(conditionalExpression.getExpression(), TokenNameQUESTION);
+        int colonIndex = this.tm.firstIndexAfter(conditionalExpression.getThenExpression(), TokenNameCOLON);
+        int wrapParentIndex = this.tm.lastIndexIn(conditionalExpression.getExpression(), ANY);
+        int continuationIndent = this.options.continuation_indentation * this.options.indentation_size;
+
+        Token questionToken = this.tm.get(questionIndex);
+        questionToken.breakBefore();
+        questionToken.setWrapPolicy(new WrapPolicy(WrapMode.WHERE_NECESSARY, wrapParentIndex, continuationIndent));
+
+        Token colonToken = this.tm.get(colonIndex);
+        colonToken.breakBefore();
+        colonToken.setWrapPolicy(new WrapPolicy(WrapMode.WHERE_NECESSARY, wrapParentIndex, continuationIndent));
     }
 
     private boolean isInsideAnnotationValue(TextBlock node) {

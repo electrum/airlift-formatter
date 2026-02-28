@@ -389,6 +389,337 @@ public class FormattingFixesTest
         assertFormatsOldToNew(code, code);
     }
 
+    @Test
+    void testThrowTextBlockArgumentStartsOnNewLine()
+    {
+        String oldCode = """
+                class Test
+                {
+                    void fail()
+                    {
+                        throw new IllegalStateException(\"\"\"
+                                boom
+                                \"\"\");
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    void fail()
+                    {
+                        throw new IllegalStateException(
+                                \"\"\"
+                                boom
+                                \"\"\");
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testYieldTextBlockCanStayOnSameLine()
+    {
+        String code = """
+                class Test
+                {
+                    String value(int input)
+                    {
+                        return switch (input) {
+                            default -> {
+                                yield \"\"\"
+                                       value
+                                       \"\"\";
+                            }
+                        };
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(code, code);
+    }
+
+    @Test
+    void testTernaryTextBlocksUseSeparateQuestionAndColonLines()
+    {
+        String oldCode = """
+                class Test
+                {
+                    String value(boolean cond)
+                    {
+                        var formattedPolicyText = cond ? \"\"\"
+                                       xxx
+                                       \"\"\" : \"\"\"
+                                               yyy
+                                               \"\"\";
+                        return formattedPolicyText;
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    String value(boolean cond)
+                    {
+                        var formattedPolicyText = cond
+                                ? \"\"\"
+                                  xxx
+                                  \"\"\"
+                                : \"\"\"
+                                  yyy
+                                  \"\"\";
+                        return formattedPolicyText;
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testParenthesizedTextBlockStartsOnNewLine()
+    {
+        String oldCode = """
+                class Test
+                {
+                    String value()
+                    {
+                        var formattedPolicyText = (\"\"\"
+                                abc
+                                \"\"\");
+                        return formattedPolicyText;
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    String value()
+                    {
+                        var formattedPolicyText = (
+                                \"\"\"
+                                abc
+                                \"\"\");
+                        return formattedPolicyText;
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testLambdaTextBlockStartsOnNewLine()
+    {
+        String oldCode = """
+                class Test
+                {
+                    Runnable action()
+                    {
+                        return () -> \"\"\"
+                                lambda
+                                \"\"\";
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    Runnable action()
+                    {
+                        return () ->
+                                \"\"\"
+                                lambda
+                                \"\"\";
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testSwitchRuleTextBlockCanStayOnSameLine()
+    {
+        String code = """
+                class Test
+                {
+                    String value(int input)
+                    {
+                        return switch (input) {
+                            case 1 -> \"\"\"
+                                      one
+                                      \"\"\";
+                            default -> \"\"\"
+                                       other
+                                       \"\"\";
+                        };
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(code, code);
+    }
+
+    @Test
+    void testBinaryExpressionTextBlockStartsOnNewLine()
+    {
+        String oldCode = """
+                class Test
+                {
+                    String value()
+                    {
+                        var formattedPolicyText = \"prefix \" + \"\"\"
+                                value
+                                \"\"\";
+                        return formattedPolicyText;
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    String value()
+                    {
+                        var formattedPolicyText = \"prefix \" +
+                                \"\"\"
+                                value
+                                \"\"\";
+                        return formattedPolicyText;
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testCastExpressionTextBlockStartsOnNewLine()
+    {
+        String oldCode = """
+                class Test
+                {
+                    String value()
+                    {
+                        var formattedPolicyText = (String) \"\"\"
+                                value
+                                \"\"\";
+                        return formattedPolicyText;
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    String value()
+                    {
+                        var formattedPolicyText = (String)
+                                \"\"\"
+                                value
+                                \"\"\";
+                        return formattedPolicyText;
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testAssertMessageTextBlockStartsOnNewLine()
+    {
+        String oldCode = """
+                class Test
+                {
+                    void verify(boolean ok)
+                    {
+                        assert ok : \"\"\"
+                                bad
+                                \"\"\";
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    void verify(boolean ok)
+                    {
+                        assert ok :
+                                \"\"\"
+                                bad
+                                \"\"\";
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testArrayInitializerElementTextBlockStartsOnNewLine()
+    {
+        String oldCode = """
+                class Test
+                {
+                    String[] values()
+                    {
+                        return new String[] { \"\"\"
+                                value
+                                \"\"\" };
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    String[] values()
+                    {
+                        return new String[] {
+                                \"\"\"
+                                value
+                                \"\"\"};
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testFieldInitializerTextBlockStartsOnNewLine()
+    {
+        String oldCode = """
+                class Test
+                {
+                    String policy = \"\"\"
+                            field
+                            \"\"\";
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    String policy =
+                            \"\"\"
+                            field
+                            \"\"\";
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
     private void assertFormatsOldToNew(String oldCode, String newCode)
     {
         assertEquals(newCode, formatter.format(oldCode), "Old formatting should be converted to the expected new style");
