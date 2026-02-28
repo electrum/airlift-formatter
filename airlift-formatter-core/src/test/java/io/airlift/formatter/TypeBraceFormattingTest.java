@@ -126,6 +126,145 @@ public class TypeBraceFormattingTest
         assertFormatsOldToNew(oldCode, newCode);
     }
 
+    @Test
+    void testNoBlankLinesImmediatelyInsideTypeBraces()
+    {
+        String oldCode = """
+                class Foo
+                {
+
+                    String abc;
+
+                }
+                """;
+
+        String newCode = """
+                class Foo
+                {
+                    String abc;
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testNoBlankLinesImmediatelyInsideIfBlockBraces()
+    {
+        String oldCode = """
+                class Foo
+                {
+                    void run()
+                    {
+                        if (abc) {
+
+                            exec();
+
+                        }
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Foo
+                {
+                    void run()
+                    {
+                        if (abc) {
+                            exec();
+                        }
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testNoBlankLinesImmediatelyInsideLambdaAndSwitchExpressionBraces()
+    {
+        String oldCode = """
+                class Foo
+                {
+                    Runnable create(int value)
+                    {
+                        return () -> {
+                            if (value > 0) {
+
+                                int result = switch (value) {
+
+                                    case 1 -> 1;
+                                    default -> 2;
+
+                                };
+                            }
+
+                        };
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Foo
+                {
+                    Runnable create(int value)
+                    {
+                        return () -> {
+                            if (value > 0) {
+                                int result = switch (value) {
+                                    case 1 -> 1;
+                                    default -> 2;
+                                };
+                            }
+                        };
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testCompressMultipleBlankLinesBetweenStatementsToSingle()
+    {
+        String oldCode = """
+                class Foo
+                {
+                    void run(boolean first, boolean second)
+                    {
+
+                        if (first) {
+                            executeFirst();
+                        }
+
+
+                        if (second) {
+                            executeSecond();
+                        }
+
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Foo
+                {
+                    void run(boolean first, boolean second)
+                    {
+                        if (first) {
+                            executeFirst();
+                        }
+
+                        if (second) {
+                            executeSecond();
+                        }
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
     private void assertFormatsOldToNew(String oldCode, String newCode)
     {
         assertEquals(newCode, formatter.format(oldCode), "Old formatting should be converted to the expected new style");

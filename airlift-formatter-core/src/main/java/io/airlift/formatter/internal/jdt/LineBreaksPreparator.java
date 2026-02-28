@@ -883,7 +883,9 @@ public class LineBreaksPreparator extends ASTVisitor {
             }
         }
 
-        putBlankLinesAfter(openBraceToken, blankLinesAfterOpeningBrace);
+        // AIRLIFT MODIFICATION: Force removal of blank lines after opening braces.
+        // This enforces exactly one line break after '{' (no empty lines).
+        putBlankLinesAfter(openBraceToken, ~blankLinesAfterOpeningBrace);
 
         // AIRLIFT MODIFICATION: gofmt-style - preserve closing braces on same line (}})
         // If the original had the closing brace on the same line as the previous token,
