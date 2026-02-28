@@ -288,10 +288,43 @@ public class FormattingFixesTest
                     String query()
                     {
                         String sql =
-                        \"\"\"
-                        SELECT 1
-                        \"\"\";
+                                \"\"\"
+                                SELECT 1
+                                \"\"\";
                         return sql;
+                    }
+                }
+                """;
+
+        assertFormatsOldToNew(oldCode, newCode);
+    }
+
+    @Test
+    void testAssignmentTextBlockOpenerUsesContinuationIndent()
+    {
+        String oldCode = """
+                class Test
+                {
+                    String policy()
+                    {
+                        var policy = \"\"\"
+                        allow all
+                        \"\"\";
+                        return policy;
+                    }
+                }
+                """;
+
+        String newCode = """
+                class Test
+                {
+                    String policy()
+                    {
+                        var policy =
+                                \"\"\"
+                                allow all
+                                \"\"\";
+                        return policy;
                     }
                 }
                 """;

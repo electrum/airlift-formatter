@@ -690,7 +690,6 @@ public class LineBreaksPreparator extends ASTVisitor {
         int blockIndex = this.tm.firstIndexIn(node, TokenNameTextBlock);
         Token block = this.tm.get(blockIndex);
         boolean openerAlreadyOnNewLine = blockIndex > 0 && this.tm.countLineBreaksBetween(this.tm.get(blockIndex - 1), block) > 0;
-        boolean annotationValue = isInsideAnnotationValue(node);
         boolean forcedLineBreakBefore = false;
         // AIRLIFT MODIFICATION: Text blocks should start on a new line, except when the
         // text block starts a return expression (e.g., `return """..."""` or
@@ -699,7 +698,7 @@ public class LineBreaksPreparator extends ASTVisitor {
             block.breakBefore();
             forcedLineBreakBefore = true;
             // Use continuation indentation for wrapped text block opener lines.
-            if (annotationValue && blockIndex > 0) {
+            if (blockIndex > 0) {
                 block.setWrapPolicy(new WrapPolicy(
                         WrapMode.WHERE_NECESSARY,
                         blockIndex - 1,
